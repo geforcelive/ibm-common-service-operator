@@ -171,7 +171,7 @@ function install_cert_manager() {
     create_namespace "${CERT_MANAGER_NAMESPACE}"
     create_operator_group "ibm-cert-manager-operator" "${CERT_MANAGER_NAMESPACE}" "{}"
     create_subscription "ibm-cert-manager-operator" "${CERT_MANAGER_NAMESPACE}" "$CHANNEL" "ibm-cert-manager-operator" "${CERT_MANAGER_SOURCE}" "${SOURCE_NS}" "${INSTALL_MODE}"
-    wait_for_operator "${CERT_MANAGER_NAMESPACE}" "ibm-cert-manager-operator"
+    wait_for_certmanager "${CERT_MANAGER_NAMESPACE}"
     accept_license "certmanagerconfig.operator.ibm.com" "" "default"
 }
 
@@ -217,6 +217,39 @@ function wait_for_license_instance() {
     local success_message="ibmlicensing ${name} present"
     local error_message="Timeout after ${total_time_mins} minutes waiting for ibmlicensing ${name} to be present."
     wait_for_condition "${condition}" ${retries} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}"
+}
+
+function wait_for_certmanager() {
+    local namespace=$1
+    title " Wait for Cert Manager pods to come ready in namespace $namespace "
+    msg "-----------------------------------------------------------------------"
+    
+    #check cert manager operator pod
+    local name="ibm-cert-manager-operator"
+    local condition="${OC} -n ${namespace} get deploy --no-headers --ignore-not-found | egrep '1/1' | grep ^${name} || true"
+    local retries=20
+    local sleep_time=15
+    local total_time_mins=$(( sleep_time * retries / 60))
+    local wait_message="Waiting for deployment ${name} in namespace ${namespace} to be running ..."
+    local success_message="Deployment ${name} in namespace ${namespace} is running."
+    local error_message="Timeout after ${total_time_mins} minutes waiting for deployment ${name} in namespace ${namespace} to be running."
+    wait_for_condition "${condition}" ${retries} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}"
+
+    #check webhook pod runnning
+    name="cert-manager-webhook"
+    condition="${OC} get pod -A --no-headers --ignore-not-found | egrep '1/1' | grep ${name} || true"
+    wait_message="Waiting for pod ${name} to be running ..."
+    success_message="Pod ${name} is running."
+    error_message="Timeout after ${total_time_mins} minutes waiting for pod ${name} to be running."
+    wait_for_condition "${condition}" ${retries} ${sleep_time} "${wait_message}" "${success_message}" "${error_message}"
+
+    #check no duplicate webhook pod
+    webhook_deployments=$(${OC} get deploy -A --no-headers --ignore-not-found | grep ${name} -c)
+    if [[ $webhook_deployments != "1" ]]; then
+        error "More than one cert-manager-webhook deployment exists on the cluster."
+    fi
+    webhook_ns=$(${OC} get deploy -A | grep cert-manager-webhook | awk '{print $1}')
+    success "Cert Manager ready in namespace $namespace. Webhook pod deployed in namespace $webhook_ns"
 }
 
 function pre_req() {
