@@ -249,7 +249,7 @@ function wait_for_certmanager() {
         error "More than one cert-manager-webhook deployment exists on the cluster."
     fi
     webhook_ns=$(${OC} get deploy -A | grep cert-manager-webhook | awk '{print $1}')
-    success "Cert Manager ready in namespace $namespace. Webhook pod deployed in namespace $webhook_ns"
+    success "Cert Manager ready in namespace $namespace. Cert Manager operands deployed in namespace $webhook_ns"
 }
 
 function pre_req() {
