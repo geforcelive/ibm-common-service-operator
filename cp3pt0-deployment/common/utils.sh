@@ -936,8 +936,9 @@ function accept_license() {
     local kind=$1
     local namespace=$2
     local cr_name=$3
-    ${OC} patch "$kind" "$cr_name" -n "$namespace" --type='merge' -p '{"spec":{"license":{"accept":true}}}' || export fail="true"
-    if [[ $fail == "true" ]]; then
+    ${OC} patch "$kind" "$cr_name" -n "$namespace" --type='merge' -p '{"spec":{"license":{"accept":true}}}'
+    local accept=$(${OC} get ibmlicensing.operator.ibm.com instance -o yaml | ${YQ} '.spec.license.accept')
+    if [[ $accept != "true" ]]; then
         warning "Failed to update license acceptance for $kind CR $cr_name"
     else
         info "License accepted for $kind $cr_name."
