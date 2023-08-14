@@ -10,7 +10,7 @@ metadata:
     nss.operator.ibm.com/managed-operators: ibm-common-service-operator
     olm.skipRange: ""
     operatorChannel: v4.2
-    operatorVersion: 4.2.0
+    operatorVersion: 4.3.0
     operators.openshift.io/infrastructure-features: '["disconnected"]'
     operators.operatorframework.io/builder: operator-sdk-v1.2.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
@@ -109,7 +109,7 @@ spec:
 
     ## Operator versions
 
-     - 4.2.0
+     - 4.3.0
 
     ## Prerequisites
 
